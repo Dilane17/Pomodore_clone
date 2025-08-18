@@ -1,57 +1,97 @@
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f2f2f2;
-            color: #333;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-        }
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f2f2f2;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+}
 
-        h1 {
-            margin-bottom: 20px;
-        }
+h1 {
+    margin-bottom: 20px;
+}
 
-        #timer {
-            font-size: 6rem;
-            font-weight: bold;
-            margin-bottom: 30px;
-        }
+.header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    padding: 20px;
 
-        .buttons {
-            display: flex;
-            gap: 15px;
-        }
+}
 
-        button {
-            padding: 10px 20px;
-            font-size: 1rem;
-            cursor: pointer;
-            border: none;
-            border-radius: 5px;
-            background-color: #ff4c4c;
-            color: white;
-            transition: background-color 0.2s;
-        }
+.settings-icone {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.5rem;
+    color: #ed333b;
+    margin-left: 20px;
 
-        button:hover {
-            background-color: #e04343;
-        }
+}
 
-        .mode-buttons {
-            margin-bottom: 20px;
-            display: flex;
-            gap: 10px;
-        }
+#timer {
+    font-size: 6rem;
+    font-weight: bold;
+    margin-bottom: 30px;
+}
 
-        .mode-buttons button {
-            background-color: #ddd;
-            color: #333;
-        }
+.buttons {
+    display: flex;
+    gap: 15px;
+}
 
-        .mode-buttons button.active {
-            background-color: #ff4c4c;
-            color: white;
-        }
+button {
+    padding: 10px 20px;
+    font-size: 1rem;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    background-color: #ff4c4c;
+    color: white;
+    transition: background-color 0.2s;
+}
+
+/*button:hover {
+    background-color: #e04343;
+}*/
+
+.mode-buttons {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+.mode-buttons button {
+    background-color: #ddd;
+    color: #333;
+}
+
+.mode-buttons button.active {
+    background-color: #ff4c4c;
+    color: white;
+}
+
+.settings {
+    position: absolute;
+    top: 120px;
+    right: 40px;
+}
+
+.stain {
+    margin-top: 30px;
+    font-size: 1.2rem;
+    color: #666;
+}
+
+#stainInput {
+    width: 100px;
+    height: 28px;
+    border-radius: 5px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
