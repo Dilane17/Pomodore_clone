@@ -23,7 +23,7 @@ h1 {
 
 }
 
-.settings-icone {
+#settingsIcone {
     background: none;
     border: none;
     cursor: pointer;
@@ -31,6 +31,59 @@ h1 {
     color: #ed333b;
     margin-left: 20px;
 
+}
+
+#settingsIcone:hover {
+    color: #fff;
+    background-color: #ed333b;
+}
+
+#settingsDialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(1);
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 8px 32px rgba(237,51,59,0.18), 0 2px 8px rgba(0,0,0,0.10);
+    padding: 38px 48px 32px 48px;
+    z-index: 1001;
+    min-width: 340px;
+    max-width: 95vw;
+    color: #333;
+    animation: modalFadeIn 0.35s cubic-bezier(.4,0,.2,1);
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -60%) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+.settingsDialog::backdrop {
+    background: rgba(0,0,0,0.25);
+    z-index: 1000;
+}
+
+#closeSettingsBtn {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    background: none;
+    border: none;
+    font-size: 1.7rem;
+    color: #ed333b;
+    cursor: pointer;
+    transition: color 0.2s;
+    z-index: 1002;
+}
+#closeSettingsBtn:hover {
+    color: #333;
 }
 
 #timer {
@@ -76,9 +129,24 @@ button {
 }
 
 .settings {
-    position: absolute;
-    top: 120px;
-    right: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin-top: 18px;
+    margin-bottom: 8px;
+}
+.settings label {
+    font-size: 1.1rem;
+    color: #ed333b;
+    margin-bottom: 4px;
+}
+.settings input[type="number"] {
+    padding: 7px 12px;
+    border-radius: 6px;
+    border: 1px solid #ed333b;
+    font-size: 1rem;
+    width: 80px;
+    margin-bottom: 8px;
 }
 
 .stain {

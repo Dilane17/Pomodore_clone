@@ -11,7 +11,18 @@
 
     <div class="header">
         <h1>Pomodoro Timer</h1>
-        <button class="settings-icone"> <i class="fa-duotone fa-solid fa-gear"></i></button> 
+        <button id="settingsIcone"> <i class="fa-duotone fa-solid fa-gear"></i></button> 
+        <dialog id="settingsDialog">
+            <div class="settings">
+                <label for="workDuration">Durée du travail (minutes):</label>
+                <input type="number" id="workDuration" value="25" min="1" max="60">
+
+                <label for="breakDuration">Durée de la pause (minutes):</label>
+                <input type="number" id="breakDuration" value="5" min="1" max="60">
+                <button id="changeTimeBtn" type="submit">Sauvegarder</button>
+            </div>
+            <button autofocus id="closeSettingsBtn"> Fermer </button>
+        </dialog>
     </div>
 
     <div class="mode-buttons">
@@ -31,14 +42,7 @@
         <button type="submit">Ajouter</button>
     </div>
 
-    <div class="settings">  
-      <!--  <label for="workDuration">Durée du travail (minutes):</label>
-        <input type="number" id="workDuration" value="25" min="1" max="60">
 
-        <label for="breakDuration">Durée de la pause (minutes):</label>
-        <input type="number" id="breakDuration" value="5" min="1" max="60">
-        --> 
-    </div>
 
 
 
