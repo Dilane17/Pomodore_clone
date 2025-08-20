@@ -1,165 +1,468 @@
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f2f2f2;
-    color: #333;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    margin: 0;
-}
+ * {
+            box-sizing: border-box;
+        }
 
-h1 {
-    margin-bottom: 20px;
-}
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
 
-.header {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    padding: 20px;
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+            backdrop-filter: blur(10px);
+        }
 
-}
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
 
-#settingsIcone {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1.5rem;
-    color: #ed333b;
-    margin-left: 20px;
+        h1 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 2.2rem;
+            font-weight: 600;
+        }
 
-}
+        #settingsIcone {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.8rem;
+            color: #e74c3c;
+            padding: 10px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
 
-#settingsIcone:hover {
-    color: #fff;
-    background-color: #ed333b;
-}
+        #settingsIcone:hover {
+            color: #fff;
+            background-color: #e74c3c;
+            transform: rotate(90deg);
+        }
 
-#settingsDialog {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(1);
-    background: #fff;
-    border-radius: 18px;
-    box-shadow: 0 8px 32px rgba(237,51,59,0.18), 0 2px 8px rgba(0,0,0,0.10);
-    padding: 38px 48px 32px 48px;
-    z-index: 1001;
-    min-width: 340px;
-    max-width: 95vw;
-    color: #333;
-    animation: modalFadeIn 0.35s cubic-bezier(.4,0,.2,1);
-}
+        /* AMÉLIORATION: Stats section pour les sessions complétées */
+        .stats-section {
+            display: flex;
+            justify-content: space-around;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 30px;
+        }
 
-@keyframes modalFadeIn {
-    from {
-        opacity: 0;
-        transform: translate(-50%, -60%) scale(0.95);
-    }
-    to {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
-    }
-}
+        .stat-item {
+            text-align: center;
+        }
 
-.settingsDialog::backdrop {
-    background: rgba(0,0,0,0.25);
-    z-index: 1000;
-}
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #e74c3c;
+            display: block;
+        }
 
-#closeSettingsBtn {
-    position: absolute;
-    top: 18px;
-    right: 18px;
-    background: none;
-    border: none;
-    font-size: 1.7rem;
-    color: #ed333b;
-    cursor: pointer;
-    transition: color 0.2s;
-    z-index: 1002;
-}
-#closeSettingsBtn:hover {
-    color: #333;
-}
+        .stat-label {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
 
-#timer {
-    font-size: 6rem;
-    font-weight: bold;
-    margin-bottom: 30px;
-}
+        /* Timer display amélioré */
+        #timer {
+            font-size: 4.5rem;
+            font-weight: bold;
+            margin: 30px 0;
+            color: #2c3e50;
+            font-family: 'Courier New', monospace;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            transition: color 0.3s ease;
+        }
 
-.buttons {
-    display: flex;
-    gap: 15px;
-}
+        #timer.work-session {
+            color: #e74c3c;
+        }
 
-button {
-    padding: 10px 20px;
-    font-size: 1rem;
-    cursor: pointer;
-    border: none;
-    border-radius: 5px;
-    background-color: #ff4c4c;
-    color: white;
-    transition: background-color 0.2s;
-}
+        #timer.break-session {
+            color: #27ae60;
+        }
 
-/*button:hover {
-    background-color: #e04343;
-}*/
+        /* Mode buttons améliorés */
+        .mode-buttons {
+            margin-bottom: 30px;
+            display: flex;
+            gap: 0;
+            background: #ecf0f1;
+            border-radius: 25px;
+            padding: 5px;
+        }
 
-.mode-buttons {
-    margin-bottom: 20px;
-    display: flex;
-    gap: 10px;
-}
+        .mode-buttons button {
+            flex: 1;
+            padding: 12px 24px;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            border-radius: 20px;
+            background: transparent;
+            color: #7f8c8d;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
 
-.mode-buttons button {
-    background-color: #ddd;
-    color: #333;
-}
+        .mode-buttons button.active {
+            background: #e74c3c;
+            color: white;
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+        }
 
-.mode-buttons button.active {
-    background-color: #ff4c4c;
-    color: white;
-}
+        .mode-buttons button.active.break {
+            background: #27ae60;
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+        }
 
-.settings {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-    margin-top: 18px;
-    margin-bottom: 8px;
-}
-.settings label {
-    font-size: 1.1rem;
-    color: #ed333b;
-    margin-bottom: 4px;
-}
-.settings input[type="number"] {
-    padding: 7px 12px;
-    border-radius: 6px;
-    border: 1px solid #ed333b;
-    font-size: 1rem;
-    width: 80px;
-    margin-bottom: 8px;
-}
+        /* Progress bar ajoutée */
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
 
-.stain {
-    margin-top: 30px;
-    font-size: 1.2rem;
-    color: #666;
-}
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #e74c3c, #c0392b);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
 
-#stainInput {
-    width: 100px;
-    height: 28px;
-    border-radius: 5px;
-    padding: 5px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-}
+        .progress-bar.break {
+            background: linear-gradient(90deg, #27ae60, #229954);
+        }
+
+        /* Boutons principaux améliorés */
+        .buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            border-radius: 25px;
+            background: #e74c3c;
+            color: white;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            min-width: 120px;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(231, 76, 60, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #resetBtn {
+            background: #95a5a6;
+        }
+
+        #resetBtn:hover:not(:disabled) {
+            box-shadow: 0 6px 20px rgba(149, 165, 166, 0.3);
+        }
+
+        /* AMÉLIORATION: Section des tâches */
+        .tasks-section {
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .tasks-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .tasks-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .task-input-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        #taskInput {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ecf0f1;
+            border-radius: 25px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        #taskInput:focus {
+            border-color: #e74c3c;
+        }
+
+        #addTaskBtn {
+            background: #27ae60;
+            min-width: auto;
+            padding: 12px 20px;
+            border-radius: 25px;
+        }
+
+        #addTaskBtn:hover {
+            box-shadow: 0 6px 20px rgba(39, 174, 96, 0.3);
+        }
+
+        .tasks-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .task-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .task-item:hover {
+            background: #e9ecef;
+        }
+
+        .task-item.completed {
+            opacity: 0.6;
+            text-decoration: line-through;
+        }
+
+        .task-text {
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .task-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            color: #7f8c8d;
+            min-width: auto;
+            transition: all 0.3s ease;
+        }
+
+        .task-btn:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .task-btn.complete:hover {
+            background: #27ae60;
+            color: white;
+        }
+
+        .task-btn.delete:hover {
+            background: #e74c3c;
+            color: white;
+        }
+
+        /* Modal amélioré */
+        #settingsDialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(1);
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            padding: 40px;
+            z-index: 1001;
+            min-width: 400px;
+            max-width: 90vw;
+            color: #333;
+            animation: modalFadeIn 0.3s ease;
+            border: none;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -60%) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        #settingsDialog::backdrop {
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(5px);
+        }
+
+        .settings-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .settings-title {
+            font-size: 1.5rem;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        #closeSettingsBtn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #7f8c8d;
+            cursor: pointer;
+            transition: color 0.3s ease;
+            min-width: auto;
+            padding: 5px;
+        }
+
+        #closeSettingsBtn:hover {
+            color: #e74c3c;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .settings {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .setting-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .settings label {
+            font-size: 1rem;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .settings input[type="number"] {
+            padding: 12px;
+            border-radius: 10px;
+            border: 2px solid #ecf0f1;
+            font-size: 1rem;
+            width: 100%;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .settings input[type="number"]:focus {
+            border-color: #e74c3c;
+        }
+
+        #changeTimeBtn {
+            margin-top: 10px;
+            background: #e74c3c;
+            width: 100%;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            #timer {
+                font-size: 3rem;
+            }
+
+            .buttons {
+                flex-direction: column;
+            }
+
+            .mode-buttons {
+                flex-direction: column;
+                border-radius: 15px;
+            }
+
+            .mode-buttons button {
+                border-radius: 10px;
+            }
+
+            #settingsDialog {
+                min-width: 90vw;
+                padding: 20px;
+            }
+        }
+
+        /* AMÉLIORATION: Animations et effets visuels */
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .shake {
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }

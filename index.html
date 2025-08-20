@@ -4,47 +4,129 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pomodoro Timer</title>
-     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <div class="container">
+        <!-- Header avec titre et paramètres -->
+        <div class="header">
+            <h1>🍅 Pomodoro</h1>
+            <button id="settingsIcone" aria-label="Paramètres">
+                <i class="fas fa-cog"></i>
+            </button>
+        </div>
 
-    <div class="header">
-        <h1>Pomodoro Timer</h1>
-        <button id="settingsIcone"> <i class="fa-duotone fa-solid fa-gear"></i></button> 
-        <dialog id="settingsDialog">
-            <div class="settings">
-                <label for="workDuration">Durée du travail (minutes):</label>
-                <input type="number" id="workDuration" value="25" min="1" max="60">
-
-                <label for="breakDuration">Durée de la pause (minutes):</label>
-                <input type="number" id="breakDuration" value="5" min="1" max="60">
-                <button id="changeTimeBtn" type="submit">Sauvegarder</button>
+        <!-- AMÉLIORATION: Section des statistiques -->
+        <div class="stats-section">
+            <div class="stat-item">
+                <span class="stat-number" id="completedPomodoros">0</span>
+                <div class="stat-label">Pomodoros</div>
             </div>
-            <button autofocus id="closeSettingsBtn"> Fermer </button>
+            <div class="stat-item">
+                <span class="stat-number" id="totalFocusTime">0h 0m</span>
+                <div class="stat-label">Temps de focus</div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="currentStreak">0</span>
+                <div class="stat-label">Série actuelle</div>
+            </div>
+        </div>
+
+        <!-- Boutons de mode (Travail/Pause) -->
+        <div class="mode-buttons">
+            <button class="active" id="workBtn">
+                <i class="fas fa-briefcase"></i> Travail
+            </button>
+            <button id="breakBtn">
+                <i class="fas fa-coffee"></i> Pause
+            </button>
+        </div>
+
+        <!-- AMÉLIORATION: Barre de progression -->
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <!-- Affichage du timer -->
+        <div id="timer" class="work-session">25:00</div>
+
+        <!-- Boutons de contrôle -->
+        <div class="buttons">
+            <button id="toggleBtn">
+                <i class="fas fa-play"></i> Démarrer
+            </button>
+            <button id="resetBtn">
+                <i class="fas fa-redo"></i> Reset
+            </button>
+        </div>
+
+        <!-- AMÉLIORATION: Section de gestion des tâches -->
+        <div class="tasks-section">
+            <div class="tasks-header">
+                <h3 class="tasks-title">📝 Tâches du jour</h3>
+                <button id="clearCompletedBtn" class="task-btn" title="Effacer les tâches terminées">
+                    <i class="fas fa-broom"></i>
+                </button>
+            </div>
+            
+            <div class="task-input-container">
+                <input type="text" id="taskInput" placeholder="Ajouter une nouvelle tâche..." maxlength="100">
+                <button id="addTaskBtn" type="button">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            
+            <div class="tasks-list" id="tasksList">
+                <!-- Les tâches seront ajoutées dynamiquement ici -->
+            </div>
+        </div>
+
+        <!-- Dialog des paramètres -->
+        <dialog id="settingsDialog">
+            <button id="closeSettingsBtn" aria-label="Fermer">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <div class="settings-header">
+                <h2 class="settings-title">⚙️ Paramètres</h2>
+            </div>
+            
+            <div class="settings">
+                <div class="setting-group">
+                    <label for="workDuration">
+                        <i class="fas fa-briefcase"></i> Durée de travail (minutes):
+                    </label>
+                    <input type="number" id="workDuration" value="25" min="1" max="120" step="1">
+                </div>
+
+                <div class="setting-group">
+                    <label for="breakDuration">
+                        <i class="fas fa-coffee"></i> Durée de pause (minutes):
+                    </label>
+                    <input type="number" id="breakDuration" value="5" min="1" max="60" step="1">
+                </div>
+
+                <div class="setting-group">
+                    <label for="longBreakDuration">
+                        <i class="fas fa-bed"></i> Pause longue (minutes):
+                    </label>
+                    <input type="number" id="longBreakDuration" value="15" min="5" max="60" step="1">
+                </div>
+
+                <div class="setting-group">
+                    <label for="pomodorosUntilLongBreak">
+                        <i class="fas fa-repeat"></i> Pomodoros avant pause longue:
+                    </label>
+                    <input type="number" id="pomodorosUntilLongBreak" value="4" min="2" max="10" step="1">
+                </div>
+
+                <button id="changeTimeBtn" type="button">
+                    <i class="fas fa-save"></i> Sauvegarder les paramètres
+                </button>
+            </div>
         </dialog>
     </div>
-
-    <div class="mode-buttons">
-        <button class="active" id="workBtn">Travail</button>
-        <button id="breakBtn">Pause</button>
-    </div>
-
-    <div id="timer">25:00</div>
-
-    <div class="buttons">
-        <button id="toggleBtn">Démarrer</button>
-        <button id="resetBtn">Réinitialiser</button>
-    </div>
-
-    <div class="stain">
-        <input type="text" id="stainInput" placeholder="Ajouter une tache..."> 
-        <button type="submit">Ajouter</button>
-    </div>
-
-
-
-
 
     <script src="js/app.js" type="module"></script>
 </body>
