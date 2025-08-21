@@ -397,7 +397,7 @@ function startLongBreak() {
 // Sélection des éléments du DOM pour les tâches
 const taskInput = document.getElementById('taskInput');
 const addTaskBtn = document.getElementById('addTaskBtn');
-const taskList = document.getElementById('taskList');
+const tasksList = document.getElementById('tasksList');
 const clearCompletedBtn = document.getElementById('clearCompletedBtn');
 
 //Variable pour stocker les tâches
@@ -451,7 +451,7 @@ function renderTasks() {
     }
     // Afficher chaque tache
     tasks.forEach(task => {
-        const taskElement = createTaskElement('task');
+        const taskElement = createTaskElement(task);
         tasksList.appendChild(taskElement);
     });
     // Mettre à jour le compteur dans le bouton "effacer"
@@ -507,6 +507,17 @@ function createTaskElement(task) {
     
     return taskDiv;
 }
+
+function toggleTaskComplete(id) {
+    const task = tasks.find(t => t.id === id);
+    if (task) {
+        task.completed = !task.completed;
+        task.completedAt = task.completed ? new Date().toISOString() : null;
+        renderTasks();
+        console.log(`Tâche ${task.completed ? 'complétée' : 'réactivée'} : ${task.text}`);
+    }
+}
+
 
 // Fonction pour commencer à éditer une tâche
 function startEditingTask(taskId) {
