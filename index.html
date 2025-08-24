@@ -1,9 +1,13 @@
+<!-- ================================================================
+     🎨 VERSION COMPLÈTE DE VOTRE index.html AVEC TOUS LES AJOUTS
+     ================================================================ -->
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pomodoro Timer</title>
+    <title>Pomodoro Timer - Avec sauvegarde automatique</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -12,12 +16,19 @@
         <!-- Header avec titre et paramètres -->
         <div class="header">
             <h1>🍅 Pomodoro</h1>
-            <button id="settingsIcone" aria-label="Paramètres">
-                <i class="fas fa-cog"></i>
-            </button>
+            <div class="header-actions">
+                <!-- Indicateur de statut -->
+                <div class="status-indicator" id="statusIndicator" title="Statut de l'application">
+                    <i class="fas fa-circle"></i>
+                </div>
+                
+                <button id="settingsIcone" aria-label="Paramètres">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
         </div>
 
-        <!-- AMÉLIORATION: Section des statistiques -->
+        <!-- Section des statistiques AMÉLIORÉE -->
         <div class="stats-section">
             <div class="stat-item">
                 <span class="stat-number" id="completedPomodoros">0</span>
@@ -31,6 +42,14 @@
                 <span class="stat-number" id="currentStreak">0</span>
                 <div class="stat-label">Série actuelle</div>
             </div>
+            
+            <!-- NOUVEAU: Indicateur de sauvegarde -->
+            <div class="stat-item save-indicator" id="saveIndicator" title="État de sauvegarde">
+                <span class="stat-number">
+                    <i class="fas fa-cloud-upload-alt" id="saveIcon"></i>
+                </span>
+                <div class="stat-label" id="saveLabel">Sauvegardé</div>
+            </div>
         </div>
 
         <!-- Boutons de mode (Travail/Pause) -->
@@ -43,7 +62,7 @@
             </button>
         </div>
 
-        <!-- AMÉLIORATION: Barre de progression -->
+        <!-- Barre de progression -->
         <div class="progress-container">
             <div class="progress-bar" id="progressBar"></div>
         </div>
@@ -61,7 +80,7 @@
             </button>
         </div>
 
-        <!-- AMÉLIORATION: Section de gestion des tâches -->
+        <!-- Section de gestion des tâches -->
         <div class="tasks-section">
             <div class="tasks-header">
                 <h3 class="tasks-title">📝 Tâches du jour</h3>
@@ -126,8 +145,29 @@
                 </button>
             </div>
         </dialog>
+
+        <!-- NOUVEAU: Dialog de gestion des données -->
+        <dialog id="dataManagementDialog">
+            <div class="data-modal-header">
+                <h2 class="data-modal-title">💾 Gestion des données</h2>
+                <button class="data-modal-close" id="closeDataManagementBtn" aria-label="Fermer">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="data-modal-content">
+                <!-- Le contenu sera injecté par JavaScript -->
+            </div>
+        </dialog>
     </div>
-    
+
+    <!-- NOUVEAU: Bouton flottant de gestion des données -->
+    <button id="dataManagementBtn" class="data-management-btn" title="Gestion des données">
+        <i class="fas fa-database"></i>
+    </button>
+
+    <!-- Input caché pour l'import de fichiers -->
+    <input type="file" id="importFileInput" accept=".json" style="display: none;">
 
     <script src="js/app.js"></script>
 </body>

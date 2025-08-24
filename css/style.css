@@ -65,7 +65,7 @@
         #settingsIcone:hover {
             color: #fff;
             background-color: #e74c3c;
-            transform: rotate(90deg);
+            transform: rotate(10deg);
         }
 
         /* AMÉLIORATION: Stats section pour les sessions complétées */
@@ -210,10 +210,6 @@
         }
 
         /* AMÉLIORATION: Section des tâches */
-        /* ================================================================
-   📝 STYLES POUR LA GESTION DES TÂCHES - PHASE 3
-   ================================================================ */
-
 .tasks-section {
     background: var(--card-bg);
     border-radius: 15px;
@@ -264,11 +260,11 @@
 }
 
 #addTaskBtn {
-    padding: 12px 16px;
-    background: var(--primary-color);
+    padding: 12px 20px;
+    background: #27ae60;
     color: white;
     border: none;
-    border-radius: 50%;
+    border-radius: 25px;
     cursor: pointer;
     transition: all 0.3s ease;
     width: 48px;
@@ -276,11 +272,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    min-width: auto;
+            
+            
 }
 
 #addTaskBtn:hover {
-    background: var(--primary-hover);
-    transform: scale(1.05);
+    transform: scale(1.15);
 }
 
 .task-item {
@@ -644,3 +642,810 @@
             25% { transform: translateX(-5px); }
             75% { transform: translateX(5px); }
         }
+
+        /* ================================================================
+   💾 STYLES CSS POUR LA PHASE 4 : PERSISTANCE DES DONNÉES
+   Ajoutez ces styles à votre fichier style.css
+   ================================================================ */
+
+/* ================================================================
+   🔔 NOTIFICATIONS DE SAUVEGARDE
+   ================================================================ */
+
+.data-notification {
+    position: fixed;
+    top: 20px;
+    right: -400px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    z-index: 1000;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    max-width: 350px;
+    opacity: 0;
+}
+
+.data-notification.show {
+    right: 20px;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.data-notification-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+.data-notification-content span {
+    flex: 1;
+    font-size: 14px;
+}
+
+.data-notification-content button {
+    background: none;
+    border: none;
+    color: #7f8c8d;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    margin-left: 12px;
+    min-width: auto;
+    transition: all 0.2s ease;
+}
+
+.data-notification-content button:hover {
+    color: #e74c3c;
+    background: rgba(231, 76, 60, 0.1);
+    transform: none;
+    box-shadow: none;
+}
+
+/* Types de notifications */
+.data-notification.success {
+    border-left: 4px solid #27ae60;
+}
+
+.data-notification.success .data-notification-content::before {
+    content: '✅';
+    margin-right: 8px;
+}
+
+.data-notification.warning {
+    border-left: 4px solid #f39c12;
+}
+
+.data-notification.warning .data-notification-content::before {
+    content: '⚠️';
+    margin-right: 8px;
+}
+
+.data-notification.error {
+    border-left: 4px solid #e74c3c;
+}
+
+.data-notification.error .data-notification-content::before {
+    content: '❌';
+    margin-right: 8px;
+}
+
+.data-notification.info {
+    border-left: 4px solid #3498db;
+}
+
+.data-notification.info .data-notification-content::before {
+    content: 'ℹ️';
+    margin-right: 8px;
+}
+
+/* ================================================================
+   🗂️ BOUTON DE GESTION DES DONNÉES
+   ================================================================ */
+
+.data-management-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(52, 152, 219, 0.9);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 56px;
+    height: 56px;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(52, 152, 219, 0.3);
+    transition: all 0.3s ease;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    backdrop-filter: blur(10px);
+}
+
+.data-management-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(52, 152, 219, 0.4);
+    background: rgba(52, 152, 219, 1);
+}
+
+.data-management-btn:active {
+    transform: scale(0.95);
+}
+
+/* ================================================================
+   🗂️ MODAL DE GESTION DES DONNÉES
+   ================================================================ */
+
+#dataManagementDialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(1);
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    padding: 0;
+    z-index: 1002;
+    min-width: 500px;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: hidden;
+    color: #333;
+    animation: dataModalFadeIn 0.3s ease;
+    border: none;
+}
+
+@keyframes dataModalFadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -60%) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+#dataManagementDialog::backdrop {
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(5px);
+}
+
+.data-modal-header {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    padding: 20px 30px;
+    position: relative;
+}
+
+.data-modal-title {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+.data-modal-close {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    min-width: auto;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.data-modal-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: none;
+    box-shadow: none;
+}
+
+.data-modal-content {
+    padding: 30px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.data-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+}
+
+.data-section h4 {
+    margin: 0 0 15px 0;
+    color: #2c3e50;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.data-section p {
+    margin: 8px 0;
+    color: #6c757d;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.data-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 15px;
+}
+
+.data-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: auto;
+}
+
+.data-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.data-btn.primary {
+    background: #3498db;
+    color: white;
+}
+
+.data-btn.success {
+    background: #27ae60;
+    color: white;
+}
+
+.data-btn.warning {
+    background: #f39c12;
+    color: white;
+}
+
+.data-btn.danger {
+    background: #e74c3c;
+    color: white;
+}
+
+.data-btn.secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.data-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
+    margin: 15px 0;
+}
+
+.data-stat {
+    text-align: center;
+    padding: 12px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.data-stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #2c3e50;
+    display: block;
+}
+
+.data-stat-label {
+    font-size: 12px;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+}
+
+.storage-bar {
+    background: #e9ecef;
+    border-radius: 10px;
+    height: 8px;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+.storage-bar-fill {
+    background: linear-gradient(90deg, #27ae60, #2ecc71);
+    height: 100%;
+    transition: width 0.5s ease;
+    border-radius: 10px;
+}
+
+.storage-bar-fill.warning {
+    background: linear-gradient(90deg, #f39c12, #f1c40f);
+}
+
+.storage-bar-fill.danger {
+    background: linear-gradient(90deg, #e74c3c, #c0392b);
+}
+
+/* ================================================================
+   ✨ STYLES CSS COMPLÉMENTAIRES POUR LA PHASE 4 FINALE
+   Ajoutez ces styles après vos styles existants
+   ================================================================ */
+
+/* ================================================================
+   🎨 AMÉLIORATION DU HEADER AVEC INDICATEURS
+   ================================================================ */
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.status-indicator {
+    font-size: 12px;
+    color: #27ae60;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.status-indicator::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.3;
+}
+
+.status-indicator.offline {
+    color: #e74c3c;
+}
+
+.status-indicator.syncing {
+    color: #f39c12;
+    animation: statusPulse 2s infinite;
+}
+
+@keyframes statusPulse {
+    0%, 100% { opacity: 0.7; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.1); }
+}
+
+/* ================================================================
+   💾 INDICATEUR DE SAUVEGARDE DANS LES STATS
+   ================================================================ */
+
+.save-indicator {
+    opacity: 0.8;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.save-indicator:hover {
+    opacity: 1;
+    transform: translateY(-2px);
+}
+
+.save-indicator.saving {
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+.save-indicator.saving #saveIcon {
+    animation: spin 1s linear infinite;
+    color: #3498db;
+}
+
+.save-indicator.saved #saveIcon {
+    color: #27ae60;
+}
+
+.save-indicator.error #saveIcon {
+    color: #e74c3c;
+}
+
+.save-indicator.offline #saveIcon {
+    color: #6c757d;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ================================================================
+   📱 RESPONSIVE DESIGN POUR LES NOUVEAUX ÉLÉMENTS
+   ================================================================ */
+
+@media (max-width: 768px) {
+    .data-management-btn {
+        bottom: 80px;
+        right: 15px;
+        width: 48px;
+        height: 48px;
+        font-size: 18px;
+    }
+
+    .data-notification {
+        right: -350px;
+        max-width: calc(100vw - 20px);
+        top: 10px;
+    }
+
+    .data-notification.show {
+        right: 10px;
+    }
+
+    #dataManagementDialog {
+        min-width: 95vw;
+        max-height: 95vh;
+        padding: 0;
+    }
+
+    .data-modal-content {
+        padding: 20px;
+        max-height: 70vh;
+    }
+
+    .data-stats {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .data-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .data-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .header-actions {
+        gap: 10px;
+    }
+
+    .stats-section {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        padding: 10px;
+    }
+
+    .stat-item {
+        padding: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .data-management-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 16px;
+        bottom: 70px;
+    }
+
+    .data-modal-header {
+        padding: 15px 20px;
+    }
+
+    .data-modal-title {
+        font-size: 1.2rem;
+    }
+
+    .data-section {
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+
+    .data-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ================================================================
+   🎨 AMÉLIORATIONS VISUELLES ET ANIMATIONS
+   ================================================================ */
+
+/* Animation d'entrée pour le bouton de gestion des données */
+.data-management-btn {
+    animation: dataButtonSlideIn 0.5s ease-out 2s both;
+}
+
+@keyframes dataButtonSlideIn {
+    from {
+        transform: translateX(100px) scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/* Effet de hover amélioré pour les boutons de données */
+.data-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.data-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transition: width 0.6s, height 0.6s;
+    transform: translate(-50%, -50%);
+    z-index: 0;
+}
+
+.data-btn:hover::before {
+    width: 200%;
+    height: 200%;
+}
+
+.data-btn > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* Style pour les messages de succès/erreur */
+.success-message {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: slideDown 0.3s ease;
+}
+
+.error-message {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: slideDown 0.3s ease;
+}
+
+/* Amélioration du modal de gestion des données */
+#dataManagementDialog {
+    border: 3px solid transparent;
+    background: linear-gradient(white, white) padding-box,
+                linear-gradient(135deg, #3498db, #e74c3c) border-box;
+}
+
+/* Style pour la barre de progression du stockage */
+.storage-bar {
+    position: relative;
+    overflow: visible;
+}
+
+.storage-bar::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: storageShimmer 2s infinite;
+    pointer-events: none;
+}
+
+@keyframes storageShimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* ================================================================
+   🌙 MODE SOMBRE POUR LES NOUVEAUX ÉLÉMENTS
+   ================================================================ */
+
+[data-theme="dark"] {
+    --data-bg: #2d3748;
+    --data-border: #4a5568;
+    --data-text: #e2e8f0;
+    --data-text-muted: #a0aec0;
+}
+
+[data-theme="dark"] .data-notification {
+    background: rgba(45, 55, 72, 0.95);
+    border-color: #4a5568;
+    color: var(--data-text);
+}
+
+[data-theme="dark"] #dataManagementDialog {
+    background: var(--data-bg);
+    color: var(--data-text);
+}
+
+[data-theme="dark"] .data-section {
+    background: #1a202c;
+    border-color: var(--data-border);
+}
+
+[data-theme="dark"] .data-stat {
+    background: var(--data-bg);
+    border-color: var(--data-border);
+    color: var(--data-text);
+}
+
+[data-theme="dark"] .data-stat-value {
+    color: var(--data-text);
+}
+
+[data-theme="dark"] .data-stat-label {
+    color: var(--data-text-muted);
+}
+
+/* ================================================================
+   🎯 UTILITAIRES ET HELPERS
+   ================================================================ */
+
+/* Classes utilitaires pour l'animation */
+.fade-in {
+    animation: fadeIn 0.3s ease;
+}
+
+.slide-up {
+    animation: slideUp 0.3s ease;
+}
+
+.bounce-in {
+    animation: bounceIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { 
+        opacity: 0; 
+        transform: translateY(20px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+
+@keyframes bounceIn {
+    0% { 
+        opacity: 0; 
+        transform: scale(0.3); 
+    }
+    50% { 
+        opacity: 1; 
+        transform: scale(1.05); 
+    }
+    100% { 
+        opacity: 1; 
+        transform: scale(1); 
+    }
+}
+
+/* Classe pour masquer des éléments de façon accessible */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Style pour les tooltips personnalisés */
+[data-tooltip] {
+    position: relative;
+    cursor: help;
+}
+
+[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+}
+
+[data-tooltip]:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(100%);
+    border: 5px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
+}
+
+/* ================================================================
+   🚀 OPTIMISATIONS FINALES
+   ================================================================ */
+
+/* Amélioration des performances d'animation */
+.data-management-btn,
+.data-notification,
+.save-indicator,
+.status-indicator {
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+}
+
+/* Préventions de scrolling indésirable sur mobile */
+#dataManagementDialog {
+    overscroll-behavior: contain;
+}
+
+.data-modal-content {
+    overscroll-behavior: contain;
+}
+
+/* Focus visible amélioré pour l'accessibilité */
+.data-btn:focus-visible,
+.data-management-btn:focus-visible {
+    outline: 3px solid #4CAF50;
+    outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+    .data-management-btn,
+    .data-notification,
+    .status-indicator {
+        display: none !important;
+    }
+}
