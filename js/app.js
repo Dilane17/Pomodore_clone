@@ -1,6 +1,5 @@
 // ================================================================
-// 🍅 APPLICATION POMODORO COMPLÈTE - VERSION RÉVISÉE
-// Phases 1, 2, 3 + Corrections et optimisations
+// 🍅 APPLICATION POMODORO COMPLÈTE - VERSION CORRIGÉE
 // ================================================================
 
 // ================================================================
@@ -13,6 +12,7 @@ const breakBtn = document.getElementById('breakBtn');
 const resetBtn = document.getElementById('resetBtn');
 const timer = document.getElementById('timer');
 const workBtn = document.getElementById('workBtn');
+const progressBar = document.getElementById('progressBar');
 
 // Sélection des éléments du DOM - Paramètres
 const settingsIcone = document.getElementById('settingsIcone');
@@ -22,13 +22,23 @@ const changeTimeBtn = document.getElementById('changeTimeBtn');
 const workDuration = document.getElementById('workDuration');
 const breakDuration = document.getElementById('breakDuration');
 const longBreakDurationInput = document.getElementById('longBreakDuration');
-const pomodorosUtilLongBreakInput = document.getElementById('pomodorosUtilLongBreak');
+const pomodorosUtilLongBreakInput = document.getElementById('pomodorosUntilLongBreak');
 
 // Sélection des éléments du DOM - Tâches
 const taskInput = document.getElementById('taskInput');
 const addTaskBtn = document.getElementById('addTaskBtn');
 const tasksList = document.getElementById('tasksList');
 const clearCompletedBtn = document.getElementById('clearCompletedBtn');
+
+// Sélection des éléments du DOM - Persistance
+const dataManagementBtn = document.getElementById('dataManagementBtn');
+const dataManagementDialog = document.getElementById('dataManagementDialog');
+const closeDataManagementBtn = document.getElementById('closeDataManagementBtn');
+const importFileInput = document.getElementById('importFileInput');
+const saveIndicator = document.getElementById('saveIndicator');
+const saveIcon = document.getElementById('saveIcon');
+const saveLabel = document.getElementById('saveLabel');
+const statusIndicator = document.getElementById('statusIndicator');
 
 // Variables d'état du timer
 let remainingTime = 1500; // 25 minutes en secondes
@@ -49,27 +59,43 @@ let currentPomodoroInCycle = 0; // Compteur de pomodoros dans le cycle actuel
 
 // Variables de gestion des tâches
 let tasks = [];
-let taskId = 1; // Commencer à 1 au lieu de 0
+let taskId = 1;
+
+// Variables de persistance
+let autoSaveEnabled = true;
+let autoSaveInterval = null;
+let nextAutoSaveTime = null;
+
+// ================================================================
+// 💾 CONSTANTS DE STOCKAGE
+// ================================================================
+
+const STORAGE_KEYS = {
+    STATISTICS: 'pomodoro_statistics',
+    TASKS: 'pomodoro_tasks',
+    SETTINGS: 'pomodoro_settings',
+    TASK_ID_COUNTER: 'pomodoro_task_id',
+    APP_VERSION: 'pomodoro_version'
+};
+
+const APP_VERSION = '1.0.0';
 
 // ================================================================
 // 🔧 FONCTIONS UTILITAIRES
 // ================================================================
 
-// Fonction pour formater le temps en MM:SS
 function formatTemps(seconde) {
     const minutes = Math.floor(seconde / 60);
     const secondes = seconde % 60;
     return String(minutes).padStart(2, '0') + ':' + String(secondes).padStart(2, '0');
 }
 
-// Fonction pour échapper le HTML (sécurité XSS)
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text || '';
     return div.innerHTML;
 }
 
-// Fonction pour formater la date relative d'une tâche
 function formatTaskDate(dateString) {
     const date = new Date(dateString);
     const now = new Date();
@@ -102,27 +128,21 @@ async function setupNotifications() {
         console.log("Permission de notification:", permission);
     }
 
-    if (Notification.permission === "granted") {
-        console.log("Notifications autorisées");
-        return true;
-    } else {
-        console.log("Notifications refusées");
-        return false;
-    }
+    return Notification.permission === "granted";
 }
 
 function sendNotification() {
     if (Notification.permission === "granted") {
-        let title, body, icon = "🍅";
+        let title, body;
         
         if (!isWorkSession) {
             // Session de travail terminée
             title = "🎉 Session de travail terminée !";
-            body = `Temps de prendre une pause de ${breakSessionDuration / 60} minutes.`;
+            body = `Temps de prendre une pause de ${Math.floor(breakSessionDuration / 60)} minutes.`;
         } else {
             // Pause terminée
             title = "⏰ Pause terminée !";
-            body = `Temps de reprendre le travail pendant ${workSessionDuration / 60} minutes.`;
+            body = `Temps de reprendre le travail pendant ${Math.floor(workSessionDuration / 60)} minutes.`;
         }
         
         new Notification(title, {
@@ -138,59 +158,46 @@ function sendNotification() {
 // ================================================================
 
 function updateStats() {
-    // Récupérer les éléments DOM
     const completedPomodorosElement = document.getElementById('completedPomodoros');
     const totalFocusTimeElement = document.getElementById('totalFocusTime');
     const currentStreakElement = document.getElementById('currentStreak');
 
-    // Vérifier que les éléments existent
     if (!completedPomodorosElement || !totalFocusTimeElement || !currentStreakElement) {
         console.error("Éléments de statistiques non trouvés dans le DOM");
         return;
     }
 
-    // Mettre à jour les compteurs
     completedPomodorosElement.textContent = completedPomodoros;
     
-    // Convertir le temps total en heures et minutes
     const totalHours = Math.floor(totalFocusTime / 3600);
     const totalMinutes = Math.floor((totalFocusTime % 3600) / 60);
     totalFocusTimeElement.textContent = `${totalHours}h ${totalMinutes}m`;
     
-    // Mettre à jour la série actuelle
     currentStreakElement.textContent = currentStreak;
     
     console.log(`📊 Stats mises à jour: ${completedPomodoros} pomodoros, ${totalHours}h${totalMinutes}m, série: ${currentStreak}`);
 }
 
 function updateProgressBar() {
-    const progressBar = document.getElementById('progressBar');
-    
     if (!progressBar) {
         console.error("Barre de progression non trouvée");
         return;
     }
     
-    // Calculer le pourcentage de progression
     const timeElapsed = initialTime - remainingTime;
     const progressPercentage = Math.max(0, Math.min(100, (timeElapsed / initialTime) * 100));
     
-    // Appliquer la progression
     progressBar.style.width = progressPercentage + '%';
     
-    // Changer la couleur selon le type de session
     if (isWorkSession) {
         progressBar.classList.remove('break');
     } else {
         progressBar.classList.add('break');
     }
-    
-    console.log(`📊 Progression: ${Math.round(progressPercentage)}%`);
 }
 
 function recordCompletedSession() {
     if (isWorkSession) {
-        // Session de travail terminée
         completedPomodoros++;
         currentStreak++;
         currentPomodoroInCycle++;
@@ -198,7 +205,6 @@ function recordCompletedSession() {
         
         console.log(`✅ Pomodoro #${completedPomodoros} terminé! Série: ${currentStreak}`);
         
-        // Proposer de marquer une tâche comme terminée
         setTimeout(() => {
             const currentTask = getCurrentTask();
             if (currentTask) {
@@ -217,7 +223,7 @@ function resetStreak() {
     currentStreak = 0;
     updateStats();
     console.log("🔄 Série remise à zéro");
-    saveData();
+    saveAllData();
 }
 
 // ================================================================
@@ -225,28 +231,28 @@ function resetStreak() {
 // ================================================================
 
 function updateUI() {
-    // Mettre à jour l'affichage du timer
     timer.textContent = formatTemps(remainingTime);
     
-    // Mettre à jour les boutons actifs
     workBtn.classList.toggle('active', isWorkSession);
     breakBtn.classList.toggle('active', !isWorkSession);
     
-    // Mettre à jour le texte du bouton principal
+    if (isWorkSession) {
+        breakBtn.classList.remove('active');
+        breakBtn.classList.remove('break');
+    } else {
+        workBtn.classList.remove('active');
+        breakBtn.classList.add('break');
+    }
+    
     toggleBtn.innerHTML = isRunning ? 
         '<i class="fas fa-pause"></i> Pause' : 
         '<i class="fas fa-play"></i> Démarrer';
 
-    // Mettre à jour la barre de progression
     updateProgressBar();
-    
-    // Mettre à jour l'affichage de la tâche en cours
     updateTimerWithCurrentTask();
     
-    // Changer la classe du timer selon la session
     timer.className = isWorkSession ? 'work-session' : 'break-session';
     
-    // Ajouter l'effet pulse quand il reste moins de 10 secondes
     if (remainingTime <= 10 && remainingTime > 0 && isRunning) {
         timer.classList.add('pulse');
     } else {
@@ -271,7 +277,7 @@ function startTimer() {
     
     countDown = setInterval(() => {
         remainingTime--;
-        updateUI(); // Mettre à jour toute l'interface à chaque seconde
+        updateUI();
         
         if (remainingTime <= 0) {
             stopTimer();
@@ -281,17 +287,14 @@ function startTimer() {
 }
 
 function handleSessionComplete() {
-    // Enregistrer la session terminée
     recordCompletedSession();
 
-    // Envoyer une notification
     setupNotifications().then(canNotify => {
         if (canNotify) {
             sendNotification();
         }
     });
 
-    // Déterminer et démarrer la session suivante
     const nextSession = determineNextSessionType();
     
     if (nextSession === "pause courte") {
@@ -299,7 +302,7 @@ function handleSessionComplete() {
     } else if (nextSession === "pause longue") {
         startLongBreak();
     } else {
-        switchSession(); // Reprendre le travail
+        switchSession();
     }
 }
 
@@ -311,7 +314,6 @@ function switchSession() {
 }
 
 function resetToCurrentSession() {
-    // Si on reset pendant une session de travail, casser la série
     if (isRunning && isWorkSession) {
         resetStreak();
     }
@@ -344,9 +346,9 @@ function startLongBreak() {
     isWorkSession = false;
     remainingTime = longBreakDuration;
     initialTime = longBreakDuration;
-    currentPomodoroInCycle = 0; // Réinitialiser le cycle
+    currentPomodoroInCycle = 0;
     updateUI();
-    console.log(`🛌 Pause longue démarrée (${longBreakDuration / 60} min)`);
+    console.log(`🛌 Pause longue démarrée (${Math.floor(longBreakDuration / 60)} min)`);
 }
 
 // ================================================================
@@ -354,7 +356,6 @@ function startLongBreak() {
 // ================================================================
 
 function addTask(taskText) {
-    // Validation
     const trimmedText = taskText?.trim();
     if (!trimmedText) {
         showTaskError("Veuillez saisir une tâche");
@@ -366,7 +367,6 @@ function addTask(taskText) {
         return false;
     }
 
-    // Créer la tâche
     const newTask = {
         id: taskId++,
         text: trimmedText,
@@ -375,15 +375,13 @@ function addTask(taskText) {
         completedAt: null
     };
 
-    // Ajouter au début du tableau
     tasks.unshift(newTask);
     renderTasks();
     
-    // Vider l'input
     taskInput.value = '';
     
     console.log(`✅ Tâche ajoutée: "${newTask.text}"`);
-    saveData();
+    saveTasks();
     return true;
 }
 
@@ -421,11 +419,10 @@ function editTask(taskId, newText) {
         task.text = trimmedText;
         renderTasks();
         console.log(`✏️ Tâche modifiée: "${task.text}"`);
+        saveTasks();
         return true;
     }
-    saveData();
     return false;
-    
 }
 
 function renderTasks() {
@@ -457,7 +454,7 @@ function renderTasks() {
 function createTaskElement(task) {
     const taskDiv = document.createElement('div');
     taskDiv.className = `task-item ${task.completed ? 'completed' : ''}`;
-    taskDiv.setAttribute('data-task-id', task.id); // ✅ CORRECTION: utiliser l'attribut correct
+    taskDiv.setAttribute('data-task-id', task.id);
     
     taskDiv.innerHTML = `
         <div class="task-content">
@@ -533,7 +530,6 @@ function finishEditingTask(taskId) {
         if (newText && newText !== originalText) {
             editTask(taskId, newText);
         } else {
-            // Annuler l'édition
             taskText.style.display = 'block';
             editInput.style.display = 'none';
             editInput.value = originalText;
@@ -572,8 +568,8 @@ function clearCompletedTasks() {
         tasks = tasks.filter(t => !t.completed);
         renderTasks();
         console.log(`🧹 ${completedCount} tâche(s) effacée(s)`);
+        saveTasks();
     }
-    saveData();
 }
 
 function updateClearButton() {
@@ -594,13 +590,11 @@ function updateClearButton() {
 function showTaskError(message) {
     if (!tasksList) return;
 
-    // Supprimer les erreurs existantes
     const existingError = tasksList.querySelector('.task-error');
     if (existingError) {
         existingError.remove();
     }
 
-    // Créer la nouvelle erreur
     const errorDiv = document.createElement('div');
     errorDiv.className = 'task-error';
     errorDiv.innerHTML = `
@@ -610,14 +604,12 @@ function showTaskError(message) {
     
     tasksList.insertBefore(errorDiv, tasksList.firstChild);
     
-    // Supprimer après 3 secondes
     setTimeout(() => {
         if (errorDiv.parentNode) {
             errorDiv.remove();
         }
     }, 3000);
     
-    // Effet sur l'input
     if (taskInput) {
         taskInput.classList.add('error');
         setTimeout(() => taskInput.classList.remove('error'), 2000);
@@ -671,7 +663,7 @@ function getTaskStats() {
 }
 
 // ================================================================
-// 🎯 ÉVÉNEMENTS ET PARAMÈTRES
+// ⚙️ GESTION DES PARAMÈTRES
 // ================================================================
 
 function updateSettings() {
@@ -680,7 +672,6 @@ function updateSettings() {
     const longBreakDurationMinutes = parseInt(longBreakDurationInput.value, 10);
     const pomodorosUtilLongBreakValue = parseInt(pomodorosUtilLongBreakInput.value, 10);
 
-    // Validation
     if (isNaN(workDurationMinutes) || workDurationMinutes <= 0 || workDurationMinutes > 120) {
         alert("La durée de travail doit être entre 1 et 120 minutes");
         return false;
@@ -701,13 +692,11 @@ function updateSettings() {
         return false;
     }
     
-    // Appliquer les nouveaux paramètres
     workSessionDuration = workDurationMinutes * 60;
     breakSessionDuration = breakDurationMinutes * 60;
     longBreakDuration = longBreakDurationMinutes * 60;
     pomodorosUtilLongBreak = pomodorosUtilLongBreakValue;
     
-    // Mettre à jour le timer si nécessaire
     remainingTime = isWorkSession ? workSessionDuration : breakSessionDuration;
     initialTime = remainingTime;
     
@@ -724,92 +713,15 @@ function updateSettings() {
     return true;
 }
 
-// ================================================================
-// 🎧 GESTIONNAIRES D'ÉVÉNEMENTS
-// ================================================================
-
-// Events du timer
-toggleBtn.addEventListener('click', () => {
-    if (!isRunning) {
-        startTimer();
-    } else {
-        stopTimer();
-    }
-});
-
-resetBtn.addEventListener('click', () => {
-    resetToCurrentSession();
-});
-
-// Events des boutons de mode
-breakBtn.addEventListener('click', () => {
-    if (!isRunning && isWorkSession) {
-        switchSession();
-    }
-});
-
-workBtn.addEventListener('click', () => {
-    if (!isRunning && !isWorkSession) {
-        switchSession();
-    }
-});
-
-// Events des paramètres
-settingsIcone.addEventListener('click', () => {
-    settingsDialog.showModal();
-});
-
-closeSettingsBtn.addEventListener('click', () => {
-    settingsDialog.close();
-});
-
-changeTimeBtn.addEventListener('click', () => {
-    updateSettings();
-});
-
-// Events des tâches
-addTaskBtn.addEventListener('click', () => {
-    addTask(taskInput.value);
-});
-
-taskInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-        event.preventDefault();
-        addTask(taskInput.value);
-    }
-});
-
-clearCompletedBtn.addEventListener('click', () => {
-    clearCompletedTasks();
-});
-
-// Fermer le modal avec Escape
-document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && settingsDialog.open) {
-        settingsDialog.close();
-    }
-});
+function updateSettingsInputs() {
+    if (workDuration) workDuration.value = Math.floor(workSessionDuration / 60);
+    if (breakDuration) breakDuration.value = Math.floor(breakSessionDuration / 60);
+    if (longBreakDurationInput) longBreakDurationInput.value = Math.floor(longBreakDuration / 60);
+    if (pomodorosUtilLongBreakInput) pomodorosUtilLongBreakInput.value = pomodorosUtilLongBreak;
+}
 
 // ================================================================
-// 💾 PERSISTANCE DES DONNÉES
-// ================================================================
-
-// ================================================================
-// 🗄️ CONSTANTES POUR LE STOCKAGE
-// ================================================================
-
-const STORAGE_KEYS = {
-    STATISTICS: 'pomodoro_statistics',
-    TASKS: 'pomodoro_tasks',
-    SETTINGS: 'pomodoro_settings',
-    TASK_ID_COUNTER: 'pomodoro_task_id',
-    APP_VERSION: 'pomodoro_version'
-};
-
-const APP_VERSION = '1.0.0';
-
-// ================================================================
-// 💾 FONCTIONS DE SAUVEGARDE
+// 💾 FONCTIONS DE PERSISTANCE
 // ================================================================
 
 function saveStatistics() {
@@ -870,8 +782,10 @@ function saveSettings() {
     }
 }
 
-// Fonction principale de sauvegarde
 function saveAllData() {
+    updateSaveIndicator('saving');
+    updateStatusIndicator('syncing');
+    
     const results = {
         statistics: saveStatistics(),
         tasks: saveTasks(),
@@ -879,6 +793,11 @@ function saveAllData() {
     };
     
     const success = Object.values(results).every(r => r);
+    
+    setTimeout(() => {
+        updateSaveIndicator(success ? 'saved' : 'error');
+        updateStatusIndicator(success ? 'online' : 'offline');
+    }, 500);
     
     if (success) {
         console.log('✅ Toutes les données sauvegardées avec succès');
@@ -891,10 +810,6 @@ function saveAllData() {
     return success;
 }
 
-// ================================================================
-// 📂 FONCTIONS DE CHARGEMENT
-// ================================================================
-
 function loadStatistics() {
     try {
         const saved = localStorage.getItem(STORAGE_KEYS.STATISTICS);
@@ -905,13 +820,6 @@ function loadStatistics() {
 
         const stats = JSON.parse(saved);
         
-        // Vérification de la version et migration si nécessaire
-        if (stats.version !== APP_VERSION) {
-            console.log('🔄 Migration des statistiques nécessaire');
-            return migrateStatistics(stats);
-        }
-        
-        // Restaurer les statistiques
         completedPomodoros = stats.completedPomodoros || 0;
         totalFocusTime = stats.totalFocusTime || 0;
         currentStreak = stats.currentStreak || 0;
@@ -935,17 +843,9 @@ function loadTasks() {
 
         const tasksData = JSON.parse(saved);
         
-        // Vérification de la version
-        if (tasksData.version !== APP_VERSION) {
-            console.log('🔄 Migration des tâches nécessaire');
-            return migrateTasks(tasksData);
-        }
-        
-        // Restaurer les tâches
         tasks = tasksData.tasks || [];
         taskId = tasksData.taskId || 1;
         
-        // Validation des tâches
         tasks = tasks.filter(task => {
             return task && 
                    typeof task.id === 'number' && 
@@ -971,7 +871,6 @@ function loadSettings() {
 
         const settings = JSON.parse(saved);
         
-        // Validation et application des paramètres
         if (settings.workSessionDuration && settings.workSessionDuration > 0 && settings.workSessionDuration <= 7200) {
             workSessionDuration = settings.workSessionDuration;
         }
@@ -988,7 +887,6 @@ function loadSettings() {
             pomodorosUtilLongBreak = settings.pomodorosUtilLongBreak;
         }
         
-        // Mettre à jour les inputs dans le modal
         updateSettingsInputs();
         
         console.log(`⚙️ Paramètres chargés: ${workSessionDuration/60}/${breakSessionDuration/60}/${longBreakDuration/60} min`);
@@ -999,7 +897,6 @@ function loadSettings() {
     }
 }
 
-// Fonction principale de chargement
 function loadAllData() {
     console.log('📂 Chargement des données sauvegardées...');
     
@@ -1022,59 +919,63 @@ function loadAllData() {
 }
 
 // ================================================================
-// 🔄 FONCTIONS DE MIGRATION (pour compatibilité futures versions)
-// ================================================================
-
-function migrateStatistics(oldStats) {
-    try {
-        // Migration v1.0.0 - structure de base
-        completedPomodoros = oldStats.completedPomodoros || 0;
-        totalFocusTime = oldStats.totalFocusTime || 0;
-        currentStreak = oldStats.currentStreak || 0;
-        currentPomodoroInCycle = oldStats.currentPomodoroInCycle || 0;
-        
-        // Sauvegarder avec la nouvelle version
-        saveStatistics();
-        console.log('✅ Migration des statistiques réussie');
-        return true;
-    } catch (error) {
-        console.error('❌ Erreur de migration des statistiques:', error);
-        return false;
-    }
-}
-
-function migrateTasks(oldTasksData) {
-    try {
-        // Migration v1.0.0
-        tasks = oldTasksData.tasks || [];
-        taskId = oldTasksData.taskId || Math.max(...tasks.map(t => t.id), 0) + 1;
-        
-        // Nettoyer les tâches invalides
-        tasks = tasks.filter(task => task && task.id && task.text);
-        
-        // Sauvegarder avec la nouvelle version
-        saveTasks();
-        console.log('✅ Migration des tâches réussie');
-        return true;
-    } catch (error) {
-        console.error('❌ Erreur de migration des tâches:', error);
-        return false;
-    }
-}
-
-// ================================================================
 // 🎨 FONCTIONS D'INTERFACE POUR LA PERSISTANCE
 // ================================================================
 
-function updateSettingsInputs() {
-    if (workDuration) workDuration.value = Math.floor(workSessionDuration / 60);
-    if (breakDuration) breakDuration.value = Math.floor(breakSessionDuration / 60);
-    if (longBreakDurationInput) longBreakDurationInput.value = Math.floor(longBreakDuration / 60);
-    if (pomodorosUtilLongBreakInput) pomodorosUtilLongBreakInput.value = pomodorosUtilLongBreak;
+function updateSaveIndicator(status = 'saved') {
+    if (!saveIndicator || !saveIcon || !saveLabel) return;
+    
+    saveIndicator.classList.remove('saving', 'saved', 'error');
+    
+    switch(status) {
+        case 'saving':
+            saveIndicator.classList.add('saving');
+            saveIcon.className = 'fas fa-sync-alt';
+            saveLabel.textContent = 'Sauvegarde...';
+            break;
+        case 'saved':
+            saveIndicator.classList.add('saved');
+            saveIcon.className = 'fas fa-cloud-upload-alt';
+            saveLabel.textContent = 'Sauvegardé';
+            break;
+        case 'error':
+            saveIndicator.classList.add('error');
+            saveIcon.className = 'fas fa-exclamation-triangle';
+            saveLabel.textContent = 'Erreur';
+            break;
+        case 'offline':
+            saveIndicator.classList.remove('saving', 'saved', 'error');
+            saveIcon.className = 'fas fa-cloud-download-alt';
+            saveLabel.textContent = 'Hors ligne';
+            break;
+    }
+}
+
+function updateStatusIndicator(status = 'online') {
+    if (!statusIndicator) return;
+    
+    statusIndicator.classList.remove('offline', 'syncing');
+    
+    switch(status) {
+        case 'online':
+            statusIndicator.className = 'status-indicator';
+            statusIndicator.style.color = '#27ae60';
+            statusIndicator.title = 'Application en ligne - données sauvegardées';
+            break;
+        case 'offline':
+            statusIndicator.classList.add('offline');
+            statusIndicator.style.color = '#e74c3c';
+            statusIndicator.title = 'Application hors ligne';
+            break;
+        case 'syncing':
+            statusIndicator.classList.add('syncing');
+            statusIndicator.style.color = '#f39c12';
+            statusIndicator.title = 'Synchronisation en cours...';
+            break;
+    }
 }
 
 function showDataMessage(message, type = 'info') {
-    // Créer une notification temporaire
     const notification = document.createElement('div');
     notification.className = `data-notification ${type}`;
     notification.innerHTML = `
@@ -1086,13 +987,10 @@ function showDataMessage(message, type = 'info') {
         </div>
     `;
     
-    // Ajouter au body
     document.body.appendChild(notification);
     
-    // Animation d'entrée
     setTimeout(() => notification.classList.add('show'), 100);
     
-    // Suppression automatique après 3 secondes
     setTimeout(() => {
         notification.classList.remove('show');
         setTimeout(() => {
@@ -1103,8 +1001,73 @@ function showDataMessage(message, type = 'info') {
     }, 3000);
 }
 
+function getStorageInfo() {
+    try {
+        const info = {
+            used: 0,
+            keys: Object.keys(localStorage).filter(key => key.startsWith('pomodoro_')),
+            details: {}
+        };
+        
+        info.keys.forEach(key => {
+            const value = localStorage.getItem(key);
+            const size = new Blob([value]).size;
+            info.used += size;
+            info.details[key] = {
+                size: size,
+                lastModified: JSON.parse(value).lastSaveDate || 'Inconnu'
+            };
+        });
+        
+        info.usedKB = Math.round(info.used / 1024 * 100) / 100;
+        info.quota = 5120;
+        info.usagePercent = Math.round(info.used / (info.quota * 1024) * 10000) / 100;
+        
+        return info;
+    } catch (error) {
+        console.error('❌ Erreur d\'analyse du stockage:', error);
+        return null;
+    }
+}
+
 // ================================================================
-// 🗑️ FONCTIONS DE NETTOYAGE ET MAINTENANCE
+// 🔄 SAUVEGARDE AUTOMATIQUE
+// ================================================================
+
+function startAutoSave(intervalMinutes = 2) {
+    stopAutoSave();
+    
+    autoSaveInterval = setInterval(() => {
+        saveAllData();
+    }, intervalMinutes * 60 * 1000);
+    
+    const updateNextSaveTime = () => {
+        nextAutoSaveTime = new Date(Date.now() + intervalMinutes * 60 * 1000);
+    };
+    
+    updateNextSaveTime();
+    
+    const timeUpdateInterval = setInterval(() => {
+        if (!autoSaveEnabled || !autoSaveInterval) {
+            clearInterval(timeUpdateInterval);
+            return;
+        }
+        updateNextSaveTime();
+    }, 60000);
+    
+    console.log(`⏰ Sauvegarde automatique activée (${intervalMinutes} min)`);
+}
+
+function stopAutoSave() {
+    if (autoSaveInterval) {
+        clearInterval(autoSaveInterval);
+        autoSaveInterval = null;
+        console.log('⏹️ Sauvegarde automatique désactivée');
+    }
+}
+
+// ================================================================
+// 🗂️ FONCTIONS DE GESTION DES DONNÉES AVANCÉES
 // ================================================================
 
 function clearAllData() {
@@ -1120,12 +1083,10 @@ function clearAllData() {
     if (!confirmation) return false;
     
     try {
-        // Effacer le localStorage
         Object.values(STORAGE_KEYS).forEach(key => {
             localStorage.removeItem(key);
         });
         
-        // Réinitialiser les variables
         completedPomodoros = 0;
         totalFocusTime = 0;
         currentStreak = 0;
@@ -1133,13 +1094,11 @@ function clearAllData() {
         tasks = [];
         taskId = 1;
         
-        // Réinitialiser les paramètres par défaut
         workSessionDuration = 1500;
         breakSessionDuration = 300;
         longBreakDuration = 900;
         pomodorosUtilLongBreak = 4;
         
-        // Mettre à jour l'interface
         updateUI();
         updateStats();
         renderTasks();
@@ -1197,74 +1156,259 @@ function exportData() {
     }
 }
 
-function getStorageInfo() {
-    try {
-        const info = {
-            used: 0,
-            keys: Object.keys(localStorage).filter(key => key.startsWith('pomodoro_')),
-            details: {}
-        };
-        
-        info.keys.forEach(key => {
-            const value = localStorage.getItem(key);
-            const size = new Blob([value]).size;
-            info.used += size;
-            info.details[key] = {
-                size: size,
-                lastModified: JSON.parse(value).lastSaveDate || 'Inconnu'
-            };
-        });
-        
-        info.usedKB = Math.round(info.used / 1024 * 100) / 100;
-        info.quota = 5120; // 5MB estimation pour localStorage
-        info.usagePercent = Math.round(info.used / (info.quota * 1024) * 10000) / 100;
-        
-        return info;
-    } catch (error) {
-        console.error('❌ Erreur d\'analyse du stockage:', error);
-        return null;
+function importData() {
+    if (importFileInput) {
+        importFileInput.click();
     }
 }
 
-// ================================================================
-// 🔄 SAUVEGARDE AUTOMATIQUE
-// ================================================================
-
-let autoSaveInterval = null;
-
-function startAutoSave(intervalMinutes = 5) {
-    stopAutoSave(); // Arrêter l'ancien interval s'il existe
+function handleImportFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
     
-    autoSaveInterval = setInterval(() => {
-        saveAllData();
-    }, intervalMinutes * 60 * 1000);
-    
-    console.log(`⏰ Sauvegarde automatique activée (${intervalMinutes} min)`);
-}
-
-function stopAutoSave() {
-    if (autoSaveInterval) {
-        clearInterval(autoSaveInterval);
-        autoSaveInterval = null;
-        console.log('⏹️ Sauvegarde automatique désactivée');
+    if (!file.name.endsWith('.json')) {
+        showDataMessage('❌ Format de fichier invalide (JSON requis)', 'error');
+        return;
     }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const importedData = JSON.parse(e.target.result);
+            
+            if (!importedData.appVersion) {
+                throw new Error('Fichier de sauvegarde invalide');
+            }
+            
+            const confirmation = confirm(
+                '📥 Importer les données ?\n\n' +
+                'Cette action remplacera vos données actuelles par :\n' +
+                `• ${importedData.statistics?.completedPomodoros || 0} pomodoros\n` +
+                `• ${importedData.tasks?.length || 0} tâches\n` +
+                `• Paramètres personnalisés\n\n` +
+                '⚠️ Vos données actuelles seront perdues !\n' +
+                'Voulez-vous continuer ?'
+            );
+            
+            if (!confirmation) {
+                event.target.value = '';
+                return;
+            }
+            
+            if (importedData.statistics) {
+                completedPomodoros = importedData.statistics.completedPomodoros || 0;
+                totalFocusTime = importedData.statistics.totalFocusTime || 0;
+                currentStreak = importedData.statistics.currentStreak || 0;
+                currentPomodoroInCycle = importedData.statistics.currentPomodoroInCycle || 0;
+            }
+            
+            if (importedData.tasks && Array.isArray(importedData.tasks)) {
+                tasks = importedData.tasks.filter(task => 
+                    task && task.id && task.text && task.text.trim().length > 0
+                );
+                taskId = Math.max(...tasks.map(t => t.id), 0) + 1;
+            }
+            
+            if (importedData.settings) {
+                const settings = importedData.settings;
+                if (settings.workSessionDuration > 0) workSessionDuration = settings.workSessionDuration;
+                if (settings.breakSessionDuration > 0) breakSessionDuration = settings.breakSessionDuration;
+                if (settings.longBreakDuration > 0) longBreakDuration = settings.longBreakDuration;
+                if (settings.pomodorosUtilLongBreak > 0) pomodorosUtilLongBreak = settings.pomodorosUtilLongBreak;
+            }
+            
+            saveAllData();
+            
+            updateUI();
+            updateStats();
+            renderTasks();
+            updateSettingsInputs();
+            
+            showDataMessage('📥 Données importées avec succès', 'success');
+            console.log('📥 Import réussi depuis:', file.name);
+            
+        } catch (error) {
+            console.error('❌ Erreur d\'import:', error);
+            showDataMessage('❌ Erreur lors de l\'import - fichier invalide', 'error');
+        } finally {
+            event.target.value = '';
+        }
+    };
+    
+    reader.readAsText(file);
 }
 
 // ================================================================
-// 🎧 ÉVÉNEMENTS DE SAUVEGARDE
+// 🎧 GESTIONNAIRES D'ÉVÉNEMENTS
 // ================================================================
 
-// Sauvegarder avant de quitter la page
+// Events du timer
+if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+        if (!isRunning) {
+            startTimer();
+        } else {
+            stopTimer();
+        }
+    });
+}
+
+if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+        resetToCurrentSession();
+    });
+}
+
+// Events des boutons de mode
+if (breakBtn) {
+    breakBtn.addEventListener('click', () => {
+        if (!isRunning && isWorkSession) {
+            switchSession();
+        }
+    });
+}
+
+if (workBtn) {
+    workBtn.addEventListener('click', () => {
+        if (!isRunning && !isWorkSession) {
+            switchSession();
+        }
+    });
+}
+
+// Events des paramètres
+if (settingsIcone) {
+    settingsIcone.addEventListener('click', () => {
+        settingsDialog.showModal();
+    });
+}
+
+if (closeSettingsBtn) {
+    closeSettingsBtn.addEventListener('click', () => {
+        settingsDialog.close();
+    });
+}
+
+if (changeTimeBtn) {
+    changeTimeBtn.addEventListener('click', () => {
+        updateSettings();
+    });
+}
+
+// Events des tâches
+if (addTaskBtn) {
+    addTaskBtn.addEventListener('click', () => {
+        addTask(taskInput.value);
+    });
+}
+
+if (taskInput) {
+    taskInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            addTask(taskInput.value);
+        }
+    });
+}
+
+if (clearCompletedBtn) {
+    clearCompletedBtn.addEventListener('click', () => {
+        clearCompletedTasks();
+    });
+}
+
+// Events de persistance
+if (dataManagementBtn) {
+    dataManagementBtn.addEventListener('click', () => {
+        updateDataManagementModal();
+        dataManagementDialog.showModal();
+    });
+}
+
+if (closeDataManagementBtn) {
+    closeDataManagementBtn.addEventListener('click', () => {
+        dataManagementDialog.close();
+    });
+}
+
+if (importFileInput) {
+    importFileInput.addEventListener('change', handleImportFile);
+}
+
+// Événements globaux
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+        if (settingsDialog && settingsDialog.open) {
+            settingsDialog.close();
+        }
+        if (dataManagementDialog && dataManagementDialog.open) {
+            dataManagementDialog.close();
+        }
+    }
+    
+    // Raccourcis clavier (uniquement si pas dans un input et aucun modal ouvert)
+    if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA' &&
+        (!settingsDialog || !settingsDialog.open) && 
+        (!dataManagementDialog || !dataManagementDialog.open)) {
+        
+        switch(event.key.toLowerCase()) {
+            case ' ':
+                event.preventDefault();
+                if (toggleBtn) toggleBtn.click();
+                break;
+            case 'r':
+                if (resetBtn) resetBtn.click();
+                break;
+            case 'w':
+                if (!isRunning && workBtn) workBtn.click();
+                break;
+            case 'b':
+                if (!isRunning && breakBtn) breakBtn.click();
+                break;
+            case 's':
+                if (settingsIcone) settingsIcone.click();
+                break;
+            case 'd':
+                if (dataManagementBtn) dataManagementBtn.click();
+                break;
+            case 't':
+                if (taskInput) taskInput.focus();
+                break;
+        }
+        
+        // Ctrl+S pour sauvegarder
+        if (event.ctrlKey && event.key.toLowerCase() === 's') {
+            event.preventDefault();
+            saveAllData();
+            showDataMessage('💾 Sauvegarde manuelle effectuée', 'success');
+        }
+    }
+});
+
+// Sauvegarde avant de quitter
 window.addEventListener('beforeunload', (event) => {
     saveAllData();
 });
 
-// Sauvegarder quand la page perd le focus
 window.addEventListener('blur', () => {
     saveAllData();
 });
 
-// Sauvegarder périodiquement quand l'utilisateur est actif
+// Détection en ligne/hors ligne
+window.addEventListener('online', () => {
+    console.log('🌐 Connexion rétablie');
+    updateStatusIndicator('online');
+    updateSaveIndicator('saved');
+    saveAllData();
+});
+
+window.addEventListener('offline', () => {
+    console.log('📶 Connexion perdue');
+    updateStatusIndicator('offline');
+    updateSaveIndicator('offline');
+});
+
+// Sauvegarde périodique basée sur l'activité
 let lastActivity = Date.now();
 
 function updateActivity() {
@@ -1275,222 +1419,115 @@ function updateActivity() {
     document.addEventListener(eventType, updateActivity, { passive: true });
 });
 
-// Vérifier l'activité et sauvegarder si nécessaire
 setInterval(() => {
     const timeSinceActivity = Date.now() - lastActivity;
-    if (timeSinceActivity > 30000) { // 30 secondes d'inactivité
+    if (timeSinceActivity > 30000) {
         saveAllData();
     }
-}, 60000); // Vérifier chaque minute
-
-console.log('💾 Module de persistance des données chargé');
+}, 60000);
 
 // ================================================================
-// 🔗 PHASE 4 : INTÉGRATION UI - FONCTIONS COMPLÉMENTAIRES
-// Ajoutez ce code après le code de persistance dans app.js
+// 🎨 FONCTIONS D'INTERFACE SPÉCIALES
 // ================================================================
-
-// ================================================================
-// 🎨 GESTION DE L'INTERFACE DE PERSISTANCE
-// ================================================================
-
-// Sélecteurs pour les nouveaux éléments UI
-const dataManagementBtn = document.getElementById('dataManagementBtn');
-const dataManagementDialog = document.getElementById('dataManagementDialog');
-const closeDataManagementBtn = document.getElementById('closeDataManagementBtn');
-const importFileInput = document.getElementById('importFileInput');
-const saveIndicator = document.getElementById('saveIndicator');
-const saveIcon = document.getElementById('saveIcon');
-const saveLabel = document.getElementById('saveLabel');
-const statusIndicator = document.getElementById('statusIndicator');
-
-// État de la sauvegarde automatique
-let autoSaveEnabled = true;
-let nextAutoSaveTime = null;
-
-// ================================================================
-// 🎯 FONCTIONS DE MISE À JOUR DE L'INTERFACE
-// ================================================================
-
-function updateSaveIndicator(status = 'saved') {
-    if (!saveIndicator || !saveIcon || !saveLabel) return;
-    
-    // Nettoyer les classes précédentes
-    saveIndicator.classList.remove('saving', 'saved', 'error');
-    
-    switch(status) {
-        case 'saving':
-            saveIndicator.classList.add('saving');
-            saveIcon.className = 'fas fa-sync-alt';
-            saveLabel.textContent = 'Sauvegarde...';
-            break;
-        case 'saved':
-            saveIndicator.classList.add('saved');
-            saveIcon.className = 'fas fa-cloud-upload-alt';
-            saveLabel.textContent = 'Sauvegardé';
-            break;
-        case 'error':
-            saveIndicator.classList.add('error');
-            saveIcon.className = 'fas fa-exclamation-triangle';
-            saveLabel.textContent = 'Erreur';
-            break;
-        case 'offline':
-            saveIndicator.classList.remove('saving', 'saved', 'error');
-            saveIcon.className = 'fas fa-cloud-download-alt';
-            saveLabel.textContent = 'Hors ligne';
-            break;
-    }
-}
-
-function updateStatusIndicator(status = 'online') {
-    if (!statusIndicator) return;
-    
-    statusIndicator.classList.remove('offline', 'syncing');
-    
-    switch(status) {
-        case 'online':
-            statusIndicator.className = 'status-indicator';
-            statusIndicator.style.color = '#27ae60';
-            statusIndicator.title = 'Application en ligne - données sauvegardées';
-            break;
-        case 'offline':
-            statusIndicator.classList.add('offline');
-            statusIndicator.style.color = '#e74c3c';
-            statusIndicator.title = 'Application hors ligne';
-            break;
-        case 'syncing':
-            statusIndicator.classList.add('syncing');
-            statusIndicator.style.color = '#f39c12';
-            statusIndicator.title = 'Synchronisation en cours...';
-            break;
-    }
-}
 
 function updateDataManagementModal() {
     if (!dataManagementDialog) return;
     
-    // Mettre à jour les statistiques dans le modal
-    const modalPomodoros = document.getElementById('modal-pomodoros');
-    const modalFocusTime = document.getElementById('modal-focus-time');
-    const modalStreak = document.getElementById('modal-streak');
-    const modalCompletionRate = document.getElementById('modal-completion-rate');
+    // Créer le contenu du modal si il n'existe pas
+    const content = dataManagementDialog.querySelector('.data-modal-content');
+    if (!content) return;
     
-    if (modalPomodoros) modalPomodoros.textContent = completedPomodoros;
-    if (modalFocusTime) {
-        const hours = Math.floor(totalFocusTime / 3600);
-        const minutes = Math.floor((totalFocusTime % 3600) / 60);
-        modalFocusTime.textContent = `${hours}h ${minutes}m`;
-    }
-    if (modalStreak) modalStreak.textContent = currentStreak;
-    
-    // Mettre à jour les statistiques des tâches
     const taskStats = getTaskStats();
-    const modalTotalTasks = document.getElementById('modal-total-tasks');
-    const modalCompletedTasks = document.getElementById('modal-completed-tasks');
-    const modalPendingTasks = document.getElementById('modal-pending-tasks');
-    
-    if (modalTotalTasks) modalTotalTasks.textContent = taskStats.total;
-    if (modalCompletedTasks) modalCompletedTasks.textContent = taskStats.completed;
-    if (modalPendingTasks) modalPendingTasks.textContent = taskStats.pending;
-    if (modalCompletionRate) modalCompletionRate.textContent = taskStats.completionRate + '%';
-    
-    // Mettre à jour les informations de stockage
-    updateStorageInfo();
-    
-    // Mettre à jour les dates de dernière sauvegarde
-    updateLastSaveDates();
-    
-    // Mettre à jour le statut d'auto-sauvegarde
-    updateAutoSaveStatus();
-}
-
-function updateStorageInfo() {
     const storageInfo = getStorageInfo();
-    if (!storageInfo) return;
     
-    const storageUsed = document.getElementById('storage-used');
-    const storagePercentage = document.getElementById('storage-percentage');
-    const storageBarFill = document.getElementById('storage-bar-fill');
-    const storageDetails = document.getElementById('storage-details');
-    
-    if (storageUsed) storageUsed.textContent = `${storageInfo.usedKB} KB`;
-    if (storagePercentage) storagePercentage.textContent = `${storageInfo.usagePercent}%`;
-    
-    if (storageBarFill) {
-        storageBarFill.style.width = `${Math.min(storageInfo.usagePercent, 100)}%`;
-        
-        // Changer la couleur selon l'utilisation
-        storageBarFill.classList.remove('warning', 'danger');
-        if (storageInfo.usagePercent > 80) {
-            storageBarFill.classList.add('danger');
-        } else if (storageInfo.usagePercent > 60) {
-            storageBarFill.classList.add('warning');
-        }
-    }
-    
-    if (storageDetails) {
-        storageDetails.textContent = `${storageInfo.keys.length} clés de données sauvegardées`;
-    }
-}
+    content.innerHTML = `
+        <div class="data-section">
+            <h4><i class="fas fa-chart-bar"></i> Statistiques générales</h4>
+            <div class="data-stats">
+                <div class="data-stat">
+                    <span class="data-stat-value" id="modal-pomodoros">${completedPomodoros}</span>
+                    <div class="data-stat-label">Pomodoros</div>
+                </div>
+                <div class="data-stat">
+                    <span class="data-stat-value" id="modal-focus-time">${Math.floor(totalFocusTime/3600)}h ${Math.floor((totalFocusTime%3600)/60)}m</span>
+                    <div class="data-stat-label">Focus</div>
+                </div>
+                <div class="data-stat">
+                    <span class="data-stat-value" id="modal-streak">${currentStreak}</span>
+                    <div class="data-stat-label">Série</div>
+                </div>
+                <div class="data-stat">
+                    <span class="data-stat-value" id="modal-completion-rate">${taskStats.completionRate}%</span>
+                    <div class="data-stat-label">Tâches</div>
+                </div>
+            </div>
+            <div class="data-actions">
+                <button class="data-btn danger" onclick="resetAllStats()">
+                    <i class="fas fa-chart-line"></i> Réinitialiser stats
+                </button>
+            </div>
+        </div>
 
-function updateLastSaveDates() {
-    try {
-        const statsData = localStorage.getItem(STORAGE_KEYS.STATISTICS);
-        const tasksData = localStorage.getItem(STORAGE_KEYS.TASKS);
-        
-        const statsLastSave = document.getElementById('stats-last-save');
-        const tasksLastSave = document.getElementById('tasks-last-save');
-        
-        if (statsLastSave) {
-            if (statsData) {
-                const parsed = JSON.parse(statsData);
-                const date = new Date(parsed.lastSaveDate);
-                statsLastSave.textContent = date.toLocaleString('fr-FR');
-            } else {
-                statsLastSave.textContent = 'Jamais';
-            }
-        }
-        
-        if (tasksLastSave) {
-            if (tasksData) {
-                const parsed = JSON.parse(tasksData);
-                const date = new Date(parsed.lastSaveDate);
-                tasksLastSave.textContent = date.toLocaleString('fr-FR');
-            } else {
-                tasksLastSave.textContent = 'Jamais';
-            }
-        }
-    } catch (error) {
-        console.error('Erreur mise à jour dates:', error);
-    }
-}
+        <div class="data-section">
+            <h4><i class="fas fa-tasks"></i> Gestion des tâches</h4>
+            <p>Total: <strong>${taskStats.total}</strong> | Terminées: <strong>${taskStats.completed}</strong> | En cours: <strong>${taskStats.pending}</strong></p>
+            <div class="data-actions">
+                <button class="data-btn warning" onclick="clearCompletedTasks()">
+                    <i class="fas fa-check-circle"></i> Effacer terminées
+                </button>
+                <button class="data-btn danger" onclick="clearAllTasks()">
+                    <i class="fas fa-trash"></i> Effacer toutes
+                </button>
+            </div>
+        </div>
 
-function updateAutoSaveStatus() {
-    const autosaveStatus = document.getElementById('autosave-status');
-    const nextAutosave = document.getElementById('next-autosave');
-    const toggleButton = document.getElementById('toggle-autosave');
-    
-    if (autosaveStatus) {
-        autosaveStatus.textContent = autoSaveEnabled ? 
-            'Activée (toutes les 2 min)' : 'Désactivée';
-    }
-    
-    if (nextAutosave && nextAutoSaveTime) {
-        nextAutosave.textContent = nextAutoSaveTime.toLocaleTimeString('fr-FR');
-    } else if (nextAutosave) {
-        nextAutosave.textContent = autoSaveEnabled ? 'Bientôt' : '--';
-    }
-    
-    if (toggleButton) {
-        toggleButton.innerHTML = autoSaveEnabled ? 
-            '<i class="fas fa-pause"></i> Désactiver auto' :
-            '<i class="fas fa-play"></i> Activer auto';
-    }
-}
+        <div class="data-section">
+            <h4><i class="fas fa-download"></i> Sauvegarde & Import</h4>
+            <p>Exportez vos données ou importez une sauvegarde précédente.</p>
+            <div class="data-actions">
+                <button class="data-btn success" onclick="exportData()">
+                    <i class="fas fa-download"></i> Exporter
+                </button>
+                <button class="data-btn primary" onclick="importData()">
+                    <i class="fas fa-upload"></i> Importer
+                </button>
+            </div>
+        </div>
 
-// ================================================================
-// 🗂️ FONCTIONS DE GESTION DES DONNÉES AVANCÉES
-// ================================================================
+        <div class="data-section">
+            <h4><i class="fas fa-hdd"></i> Stockage local</h4>
+            <p>Utilisation: <strong>${storageInfo ? storageInfo.usedKB : '0'} KB</strong> sur ~5 MB disponibles</p>
+            ${storageInfo ? `
+            <div class="storage-bar">
+                <div class="storage-bar-fill ${storageInfo.usagePercent > 80 ? 'danger' : storageInfo.usagePercent > 60 ? 'warning' : ''}" 
+                     style="width: ${Math.min(storageInfo.usagePercent, 100)}%"></div>
+            </div>
+            ` : ''}
+            <div class="data-actions">
+                <button class="data-btn secondary" onclick="showStorageDetails()">
+                    <i class="fas fa-info-circle"></i> Détails
+                </button>
+                <button class="data-btn danger" onclick="clearAllData()">
+                    <i class="fas fa-trash-alt"></i> Tout effacer
+                </button>
+            </div>
+        </div>
+
+        <div class="data-section">
+            <h4><i class="fas fa-sync"></i> Sauvegarde automatique</h4>
+            <p>État: <strong>${autoSaveEnabled ? 'Activée' : 'Désactivée'}</strong></p>
+            <div class="data-actions">
+                <button class="data-btn ${autoSaveEnabled ? 'warning' : 'success'}" onclick="toggleAutoSave()">
+                    <i class="fas fa-${autoSaveEnabled ? 'pause' : 'play'}"></i> 
+                    ${autoSaveEnabled ? 'Désactiver' : 'Activer'} auto
+                </button>
+                <button class="data-btn primary" onclick="saveAllData()">
+                    <i class="fas fa-save"></i> Sauvegarder maintenant
+                </button>
+            </div>
+        </div>
+    `;
+}
 
 function resetAllStats() {
     const confirmation = confirm(
@@ -1504,13 +1541,11 @@ function resetAllStats() {
     
     if (!confirmation) return false;
     
-    // Réinitialiser les statistiques
     completedPomodoros = 0;
     totalFocusTime = 0;
     currentStreak = 0;
     currentPomodoroInCycle = 0;
     
-    // Sauvegarder et mettre à jour l'interface
     saveStatistics();
     updateStats();
     updateDataManagementModal();
@@ -1531,11 +1566,9 @@ function clearAllTasks() {
     
     if (!confirmation) return false;
     
-    // Effacer toutes les tâches
     tasks = [];
     taskId = 1;
     
-    // Sauvegarder et mettre à jour l'interface
     saveTasks();
     renderTasks();
     updateDataManagementModal();
@@ -1543,93 +1576,6 @@ function clearAllTasks() {
     showDataMessage('📝 Toutes les tâches ont été effacées', 'warning');
     console.log('📝 Toutes les tâches ont été effacées');
     return true;
-}
-
-function importData() {
-    importFileInput.click();
-}
-
-function handleImportFile(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    if (!file.name.endsWith('.json')) {
-        showDataMessage('❌ Format de fichier invalide (JSON requis)', 'error');
-        return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const importedData = JSON.parse(e.target.result);
-            
-            // Validation basique
-            if (!importedData.appVersion) {
-                throw new Error('Fichier de sauvegarde invalide');
-            }
-            
-            const confirmation = confirm(
-                '📥 Importer les données ?\n\n' +
-                'Cette action remplacera vos données actuelles par :\n' +
-                `• ${importedData.statistics?.completedPomodoros || 0} pomodoros\n` +
-                `• ${importedData.tasks?.length || 0} tâches\n` +
-                `• Paramètres personnalisés\n\n` +
-                '⚠️ Vos données actuelles seront perdues !\n' +
-                'Voulez-vous continuer ?'
-            );
-            
-            if (!confirmation) {
-                event.target.value = ''; // Reset l'input
-                return;
-            }
-            
-            // Importer les statistiques
-            if (importedData.statistics) {
-                completedPomodoros = importedData.statistics.completedPomodoros || 0;
-                totalFocusTime = importedData.statistics.totalFocusTime || 0;
-                currentStreak = importedData.statistics.currentStreak || 0;
-                currentPomodoroInCycle = importedData.statistics.currentPomodoroInCycle || 0;
-            }
-            
-            // Importer les tâches
-            if (importedData.tasks && Array.isArray(importedData.tasks)) {
-                tasks = importedData.tasks.filter(task => 
-                    task && task.id && task.text && task.text.trim().length > 0
-                );
-                taskId = Math.max(...tasks.map(t => t.id), 0) + 1;
-            }
-            
-            // Importer les paramètres
-            if (importedData.settings) {
-                const settings = importedData.settings;
-                if (settings.workSessionDuration > 0) workSessionDuration = settings.workSessionDuration;
-                if (settings.breakSessionDuration > 0) breakSessionDuration = settings.breakSessionDuration;
-                if (settings.longBreakDuration > 0) longBreakDuration = settings.longBreakDuration;
-                if (settings.pomodorosUtilLongBreak > 0) pomodorosUtilLongBreak = settings.pomodorosUtilLongBreak;
-            }
-            
-            // Sauvegarder toutes les données importées
-            saveAllData();
-            
-            // Mettre à jour l'interface
-            updateUI();
-            updateStats();
-            renderTasks();
-            updateSettingsInputs();
-            updateDataManagementModal();
-            
-            showDataMessage('📥 Données importées avec succès', 'success');
-            console.log('📥 Import réussi depuis:', file.name);
-            
-        } catch (error) {
-            console.error('❌ Erreur d\'import:', error);
-            showDataMessage('❌ Erreur lors de l\'import - fichier invalide', 'error');
-        } finally {
-            event.target.value = ''; // Reset l'input
-        }
-    };
-    
-    reader.readAsText(file);
 }
 
 function showStorageDetails() {
@@ -1659,117 +1605,16 @@ function toggleAutoSave() {
         autoSaveEnabled = true;
         showDataMessage('▶️ Sauvegarde automatique activée', 'success');
     }
-    updateAutoSaveStatus();
+    updateDataManagementModal();
 }
 
 // ================================================================
-// 🔄 AMÉLIORATION DES FONCTIONS DE SAUVEGARDE EXISTANTES
+// 🚀 INITIALISATION DE L'APPLICATION
 // ================================================================
 
-// Surcharger la fonction saveAllData pour inclure l'UI
-const originalSaveAllData = saveAllData;
-function saveAllData() {
-    // Montrer l'indicateur de sauvegarde
-    updateSaveIndicator('saving');
-    updateStatusIndicator('syncing');
-    
-    // Appeler la fonction originale
-    const success = originalSaveAllData();
-    
-    // Mettre à jour l'indicateur selon le résultat
-    setTimeout(() => {
-        updateSaveIndicator(success ? 'saved' : 'error');
-        updateStatusIndicator(success ? 'online' : 'offline');
-    }, 500);
-    
-    return success;
-}
-
-// Améliorer startAutoSave pour inclure la planification
-const originalStartAutoSave = startAutoSave;
-function startAutoSave(intervalMinutes = 2) {
-    originalStartAutoSave(intervalMinutes);
-    
-    // Calculer la prochaine sauvegarde
-    const updateNextSaveTime = () => {
-        nextAutoSaveTime = new Date(Date.now() + intervalMinutes * 60 * 1000);
-        updateAutoSaveStatus();
-    };
-    
-    updateNextSaveTime();
-    
-    // Mettre à jour le temps restant chaque minute
-    const timeUpdateInterval = setInterval(() => {
-        if (!autoSaveEnabled || !autoSaveInterval) {
-            clearInterval(timeUpdateInterval);
-            return;
-        }
-        updateNextSaveTime();
-    }, 60000);
-}
-
-// ================================================================
-// 🎧 GESTIONNAIRES D'ÉVÉNEMENTS POUR L'UI DE PERSISTANCE
-// ================================================================
-
-// Bouton de gestion des données
-if (dataManagementBtn) {
-    dataManagementBtn.addEventListener('click', () => {
-        updateDataManagementModal();
-        dataManagementDialog.showModal();
-    });
-}
-
-// Fermeture du modal de gestion des données
-if (closeDataManagementBtn) {
-    closeDataManagementBtn.addEventListener('click', () => {
-        dataManagementDialog.close();
-    });
-}
-
-// Import de fichier
-if (importFileInput) {
-    importFileInput.addEventListener('change', handleImportFile);
-}
-
-// Fermeture avec Escape
-document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-        if (dataManagementDialog && dataManagementDialog.open) {
-            dataManagementDialog.close();
-        }
-    }
-});
-
-// Détecter si l'utilisateur est hors ligne
-window.addEventListener('online', () => {
-    console.log('🌐 Connexion rétablie');
-    updateStatusIndicator('online');
-    updateSaveIndicator('saved');
-    // Sauvegarder les modifications en attente
-    saveAllData();
-});
-
-window.addEventListener('offline', () => {
-    console.log('📶 Connexion perdue');
-    updateStatusIndicator('offline');
-    updateSaveIndicator('offline');
-});
-
-// ================================================================
-// 🚀 AMÉLIORATION DE L'INITIALISATION
-// ================================================================
-
-// Améliorer l'initialisation DOMContentLoaded existante
-const originalDOMContentLoaded = document.querySelector('script[src="js/app.js"]');
-
-// Ajouter ces lignes à votre initialisation DOMContentLoaded existante :
-/*
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🍅 Application Pomodoro démarrée');
-    
-    // AJOUTER CES LIGNES À VOTRE INITIALISATION EXISTANTE :
-    
+
     // Charger les données sauvegardées AVANT d'initialiser l'interface
     loadAllData();
     
@@ -1778,9 +1623,11 @@ document.addEventListener('DOMContentLoaded', () => {
     updateStatusIndicator(navigator.onLine ? 'online' : 'offline');
     
     // Démarrer la sauvegarde automatique
-    startAutoSave(2); // Toutes les 2 minutes
+    startAutoSave(2);
     
-    // Initialiser l'état
+    // Initialiser l'état du timer
+    initialTime = remainingTime;
+    remainingTime = isWorkSession ? workSessionDuration : breakSessionDuration;
     initialTime = remainingTime;
     
     // Initialiser l'interface (ordre important!)
@@ -1797,151 +1644,5 @@ document.addEventListener('DOMContentLoaded', () => {
     
     console.log('✅ Initialisation terminée avec persistance');
 });
-*/
 
-// ================================================================
-// 🔧 MODIFICATIONS À APPORTER AUX FONCTIONS EXISTANTES
-// ================================================================
-
-/*
-AJOUTEZ CES APPELS DE SAUVEGARDE À VOS FONCTIONS EXISTANTES :
-
-Dans recordCompletedSession() - APRÈS updateStats() :
-    updateStats();
-    saveStatistics(); // ← AJOUTER CETTE LIGNE
-
-Dans addTask() - APRÈS le console.log :
-    console.log(`✅ Tâche ajoutée: "${newTask.text}"`);
-    saveTasks(); // ← AJOUTER CETTE LIGNE
-
-Dans toggleTaskComplete() - APRÈS le console.log :
-    console.log(`🔄 Tâche ${task.completed ? 'terminée' : 'réactivée'}: "${task.text}"`);
-    saveTasks(); // ← AJOUTER CETTE LIGNE
-
-Dans deleteTask() - APRÈS le console.log :
-    console.log(`🗑️ Tâche supprimée: "${deletedTask.text}"`);
-    saveTasks(); // ← AJOUTER CETTE LIGNE
-
-Dans editTask() - APRÈS le console.log :
-    console.log(`✏️ Tâche modifiée: "${task.text}"`);
-    saveTasks(); // ← AJOUTER CETTE LIGNE
-
-Dans clearCompletedTasks() - APRÈS le console.log :
-    console.log(`🧹 ${completedCount} tâche(s) effacée(s)`);
-    saveTasks(); // ← AJOUTER CETTE LIGNE
-
-Dans updateSettings() - AVANT return true :
-    saveSettings(); // ← AJOUTER CETTE LIGNE
-    return true;
-*/
-
-// ================================================================
-// 🎨 FONCTIONS D'AMÉLIORATION UX
-// ================================================================
-
-function showQuickStats() {
-    const stats = getTaskStats();
-    const focusHours = Math.floor(totalFocusTime / 3600);
-    const focusMinutes = Math.floor((totalFocusTime % 3600) / 60);
-    
-    const message = `📊 Résumé rapide :\n\n` +
-        `🍅 Pomodoros : ${completedPomodoros}\n` +
-        `⏱️ Temps de focus : ${focusHours}h ${focusMinutes}min\n` +
-        `🔥 Série actuelle : ${currentStreak}\n` +
-        `📝 Tâches : ${stats.completed}/${stats.total} terminées (${stats.completionRate}%)\n` +
-        `💾 Dernière sauvegarde : ${new Date().toLocaleTimeString('fr-FR')}`;
-    
-    alert(message);
-}
-
-// Fonction pour afficher les raccourcis clavier
-function showKeyboardShortcuts() {
-    const shortcuts = `⌨️ Raccourcis clavier :\n\n` +
-        `• Espace : Démarrer/Pause le timer\n` +
-        `• R : Reset le timer\n` +
-        `• W : Passer en mode Travail\n` +
-        `• B : Passer en mode Pause\n` +
-        `• S : Ouvrir les paramètres\n` +
-        `• D : Ouvrir la gestion des données\n` +
-        `• T : Focus sur l'input de tâche\n` +
-        `• Ctrl+S : Sauvegarder maintenant\n` +
-        `• Escape : Fermer les modals`;
-    
-    alert(shortcuts);
-}
-
-// Ajouter des raccourcis clavier
-document.addEventListener('keydown', (event) => {
-    // Ignorer si on tape dans un input
-    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
-    
-    // Ignorer si un modal est ouvert
-    if (settingsDialog.open || dataManagementDialog.open) return;
-    
-    switch(event.key.toLowerCase()) {
-        case ' ':
-            event.preventDefault();
-            toggleBtn.click();
-            break;
-        case 'r':
-            resetBtn.click();
-            break;
-        case 'w':
-            if (!isRunning) workBtn.click();
-            break;
-        case 'b':
-            if (!isRunning) breakBtn.click();
-            break;
-        case 's':
-            settingsIcone.click();
-            break;
-        case 'd':
-            dataManagementBtn.click();
-            break;
-        case 't':
-            taskInput.focus();
-            break;
-        case 'f1':
-            event.preventDefault();
-            showKeyboardShortcuts();
-            break;
-    }
-    
-    // Ctrl+S pour sauvegarder
-    if (event.ctrlKey && event.key.toLowerCase() === 's') {
-        event.preventDefault();
-        saveAllData();
-        showDataMessage('💾 Sauvegarde manuelle effectuée', 'success');
-    }
-});
-
-console.log("🔗 Module d'intégration UI pour la persistance chargé");
-
-// ================================================================
-// 🚀 INITIALISATION
-// ================================================================
-
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('🍅 Application Pomodoro démarrée');
-
-    loadAllData(); // Charger les données sauvegardées
-    startAutoSave(2); // Démarrer la sauvegarde auto (2 min)
-
-    // Initialiser l'état
-    initialTime = remainingTime;
-    
-    // Initialiser l'interface
-    updateUI();
-    updateStats();
-    renderTasks();
-    
-
-    // Demander la permission pour les notifications
-    setupNotifications().then(canNotify => {
-        if (canNotify) {
-            console.log('🔔 Notifications prêtes');
-        }
-    });
-    
-    console.log('✅ Initialisation terminée');
-});
+console.log('💾 Module de persistance des données chargé');
